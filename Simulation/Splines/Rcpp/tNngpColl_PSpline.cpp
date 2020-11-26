@@ -44,22 +44,21 @@ static Ziggurat::Ziggurat::Ziggurat zigg;
 
 // Auxiliary functions
 
-// Math
-
+// Wrapper for random generation of n x j Standard Normal variables
 // [[Rcpp::export]]
-Matd eigenMapMatMult(const MapMatd A, const MapMatd B){
-  Matd C = A * B;
+Matd zrnorm(int n, int j) {
   
-  return C;
+  Matd x(n, j);
+  
+  for (int i=0; i<n; i++) {
+    for(int k=0; k<j; k++){
+      x(i, k) = zigg.norm();
+    }
+  }
+  return x;
 }
 
-// [[Rcpp::export]]
-Matd eigenMapMatSum(const MapMatd A, const MapMatd B){
-  Matd C = A + B;
-  
-  return C;
-}
-
+// Prediction of a Gaussian process with set of covariates X, coefficients Beta, latent temporal process w and error term variance Tau
 // [[Rcpp::export]]
 Matd eigenYPred(const MapMatd X, const MapMatd Beta, const MapMatd w, const MapVecd Tau){
   const int n = w.rows();
@@ -75,8 +74,7 @@ Matd eigenYPred(const MapMatd X, const MapMatd Beta, const MapMatd w, const MapV
   return C;
 }
 
-
-// Priors
+// Log-Priors
 double LogInvGamma(double x, double alpha, double beta) {
   
   double out = alpha*log(beta)-lgamma(alpha)-(alpha+1)*log(x)-beta/x;
@@ -97,7 +95,7 @@ double LogUnif(double x, double Low, double Up) {
 }
 
 
-// Finding neighbors of Out-Of-Sample data
+// Finding In-Sample neighbors of Out-Of-Sample data
 Array2Xi NewNeighbors(const ArrayXd& x, const ArrayXd& y, const int& neigh) {
   
   // Data
@@ -173,21 +171,35 @@ Array2Xi NewNeighbors(const ArrayXd& x, const ArrayXd& y, const int& neigh) {
   return(neighLims);
 }
 
-// Random generations
-// [[Rcpp::export]]
-Matd zrnorm(int n, int j) {
-  
-  Matd x(n, j);
-  
-  for (int i=0; i<n; i++) {
-    for(int k=0; k<j; k++){
-      x(i, k) = zigg.norm();
-    }
-  }
-  return x;
-}
 
-// NNGP Collapsed algorithm N Inds
+// Collapsed NNGP implementation for N independent individuals with common temporal covariance structure
+// 
+// INPUT:
+//  - t = all time points
+//  - Z = observed process (outcome)
+//  - XS = matrix including standard covariates (X) and covariates with penalized prior (S)
+//  - ncov = number of standard covariates (ncol(X))
+//  - nspl = number of covariates to shrink (ncol(S))
+//  - indLab = individual identifier
+//  - M = number of MCMC iterations
+//  - burnIn = proportion of burned iterations
+//  - neigh = number of neighbors
+//  - beta0, logtheta0, eta0, lambda20 = starting values for the parameter chains
+//  - rwSigma, rwSigmam = independent and adapted block-Metropolis proposal covariance of logtheta, respectively
+//  - gamma, madapt = hyperparameters controlling for adaptation of the covariance proposal (Adaptive Metropolis-Hastings)
+//  - alphaS, betaS, alphaPhi, betaPhi, alphaT, betaT, muB, VB, muE, KE, alphal0, betal0 = priors' hyperparameters
+//  - verbose, fileName = the interval to report Metropolis sampler acceptance and MCMC progress. At the same interval, text files 
+//    containing progress (one file), parameter chains (a file each M/verbose since the first iteration)
+//    and latent process chains (a file each M/verbose since the first not burned iteration) are printed out at the fileName path
+//  - n_threads = if multi-threading is available, is the number of threads on which the individual loop is ran
+// 
+// OUTPUT:
+//  - thetas, betas, etas, lambda2s = posterior samples of the parameters (complete sequence, from 1 to M)
+//  - acc = indicator of acceptance at each iteration (from 1 to M)
+//  - wPreds = matrix of posterior samples of the latent temporal component for the last verbose iteration (if the size of the dataset is large, 
+//    a low value of verbose is advised in order to not exceed memeory limits) 
+//  - loglik = log-likelihood values at all the burned iterations (from (M*burnIn + 1) to M)
+
 // [[Rcpp::export]]
 Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z, 
                                const MapMatd& XS, const int ncov, const int nspl, 
@@ -723,6 +735,21 @@ Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z,
 }
 
 
+// Collapsed NNGP predictions for a generic individual, given the posterior samples obtained from the previous function
+// 
+// INPUT:
+//  - t, tpred = time points of the training set and prediction set, respectively
+//  - XSpred = matrix including standard covariates (X) and covariates with penalized prior (S) of the prediction set
+//  - neigh = number of neighbors
+//  - index = identifier of the current individual 
+//  - thetas, betas, etas, lambda2s = posterior samples of the parameters
+//  - wPredsIn = matrix of posterior samples of the latent temporal component (dimension must be coherent with parameter chains)
+//  - verbose, fileName = the interval to report MCMC progress both on console and on a text file at the fileName path
+//  - n_threads = if multi-threading is available, is the number of threads on which the internal loop is ran
+// 
+// OUTPUT:
+//  - wPredsOut = latent component predictions 
+//  - yPredsOut = outcome predictions 
 
 // [[Rcpp::export]]
 Rcpp::List tNngpCollapsed_Preds(const Eigen::Map<ArrayXd> t, 
@@ -841,12 +868,14 @@ Rcpp::List tNngpCollapsed_Preds(const Eigen::Map<ArrayXd> t,
       double mi = covs0i.dot(CN0i.llt().solve(wm.segment(ll, top-ll+1)));
       double vi = sigma2 - covs0i.dot(CN0i.llt().solve(covs0i));
       
-      // Latent gaussian process
-      wPredsOut(i, m) = mi + sqrt(vi)*zigg.norm();
-      
-      // Process
-      yPredsOut(i, m) = XSpred.row(i)*betaetam + wPredsOut(i, m) + sqrt(tau2)*zigg.norm();
-      
+      #pragma omp critical
+      {
+        // Latent gaussian process
+        wPredsOut(i, m) = mi + sqrt(vi)*zigg.norm();
+        
+        // Process
+        yPredsOut(i, m) = XSpred.row(i)*betaetam + wPredsOut(i, m) + sqrt(tau2)*zigg.norm();
+      }
     }
   }
   

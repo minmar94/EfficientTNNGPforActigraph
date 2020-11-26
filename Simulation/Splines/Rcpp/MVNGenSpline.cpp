@@ -24,7 +24,8 @@ typedef Eigen::SimplicialLDLT<SpMat, Lower, NaturalOrdering<int>> CholLDL;
 typedef Eigen::SimplicialLLT<SpMat, Lower, NaturalOrdering<int>> CholLL;
 
 
-// [[Rcpp::export]]
+// Wrapper for random generation of n x j Standard Normal variables
+// [[Rcpp::export]] 
 MatrixXd zrnorm(int n, int j) {
   MatrixXd x(n, j);
   for (int i=0; i<n; i++) {
@@ -35,35 +36,13 @@ MatrixXd zrnorm(int n, int j) {
   return x;
 }
 
-
-// [[Rcpp::export]]
-arma::mat covFun(const arma::vec& tt, const float& sigma2, const float& phi) {
-  
-  int ndist = tt.size();
-  arma::mat covout(ndist, ndist);
-  covout(0,0) = sigma2;
-  
-  for(int i=0; i<ndist; i++){
-    covout(i,i) = sigma2;
-    for(int j=i+1; j<ndist; j++){
-     covout(j, i) = sigma2*exp(-phi*(tt(j) - tt(i))); 
-     covout(i, j) = covout(j, i);
-    }
-  }
-  
-  return covout;
-}
-
-// [[Rcpp::export]]
+// Wrapper for random generation of a ntpoints x 1 vector from a multivariate Normal with Sigma2 as cross-covariance matrix
 MatrixXd wrandomgen(MatrixXd Sigma2, int ntpoints){
   return((Sigma2.llt().matrixL())*zrnorm(ntpoints, 1));
 }
 
-// [[Rcpp::export]]
-MatrixXd CholEigen(MatrixXd Sigma2){
-  return(Sigma2.llt().matrixL());
-}
 
+// Simulation of the realization of a temporal Gaussian process with mean 0 and exponential covariance function of parameters sigma2 and phi over the set t
 // [[Rcpp::export]]
 ColVecd GPSimul(const ArrayXd& t, const float& sigma2, const float& phi) {
   
@@ -79,7 +58,7 @@ ColVecd GPSimul(const ArrayXd& t, const float& sigma2, const float& phi) {
     }
   }
   
-  w = (Sigma2.llt().matrixL())*zrnorm(nts, 1);
+  w = wrandomgen(Sigma2, nts);
   
   return w;
 }

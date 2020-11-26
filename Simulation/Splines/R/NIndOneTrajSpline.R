@@ -8,21 +8,22 @@ Rcpp::sourceCpp("Simulation/Splines/Rcpp/MVNGenSpline.cpp")
 
 #########################################################################################################################
 #
-# Simulation of a Temporal Gaussian Process with spatial splines effect on the mean and exponential covariance structure.
+# Simulation of a temporal Gaussian Process with exponential covariance function, sampled over unidimensional spatial trajectories 
+# evolving on a squared region. 
+# The mean term includes independent covariates and a spline surface effect.
 #
 # Inputs: 
 #   - J = number of individuals
 #   - TJ = number of observations for each individual j = 1,..,J
+#   - thetaT = time rate (we assume exponential waiting time)
 #   - beta0 = individual intercepts default values
-#   - smin = 
-#   - smax =  
+#   - smin, smax = boundaries of the space domain  
 #   - kns = number of knots
 #   - deg = degree of the spline basis
-#   - lambda20 = 
+#   - lambda20 = shrinkage parameter
 #   - sigma20 = sill 
 #   - phi0 = decay parameter 
 #   - tau20 = nugget
-#   - large = 
 # 
 # Output:
 #   - dat = simulated dataset
@@ -33,17 +34,16 @@ Rcpp::sourceCpp("Simulation/Splines/Rcpp/MVNGenSpline.cpp")
 
 
 # Generation -----------------------------------------------------
-SimData <- function(J = 2, TJ = c(10, 20), beta0 = c(1.5,1.5),
+SimData <- function(J = 2, TJ = c(10, 20), thetaT = 5, 
+                    beta0 = c(1.5,1.5),
                     smin = 0, smax = 10, kns = 10, deg = 2, lambda20 = 10,
-                     sigma20 = 1, phi0 = 1, tau20 = 1, large=F){
+                     sigma20 = 1, phi0 = 1, tau20 = 1){
   
-  # Time rate
-  thetaT <- 5
   
   # Auxiliary
   ncov <- length(beta0)-J # number of covariates
   Dat <- data.frame()
-  etas <- zrnorm(((kns-2)+deg)*((kns-2)+deg), 1)*sqrt(lambda20^(-1)) # splines coefficients
+  etas <- rnorm(((kns-2)+deg)*((kns-2)+deg))*sqrt(lambda20^(-1)) # shrinkage splines coefficients
   
   # For each individual 
   for(ind in 1:J)
@@ -88,14 +88,9 @@ SimData <- function(J = 2, TJ = c(10, 20), beta0 = c(1.5,1.5),
     # Mean
     mu <- X%*%beta0 + S%*%etas
 
-    # Latent gaussian
-    if (large)
-    {
-      w <- GPSimulSparse(tPoints, sigma20, phi0)
-    }else{
-      w <- GPSimul(tPoints, sigma20, phi0)
-    }
-
+    # Latent temporal component
+    w <- GPSimul(tPoints, sigma20, phi0)
+    
     # Error term
     eps <-  (sqrt(tau20)*zrnorm(TJ[[ind]], 1))[,1]
     

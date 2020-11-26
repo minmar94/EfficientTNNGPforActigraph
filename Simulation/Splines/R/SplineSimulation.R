@@ -5,8 +5,8 @@ source("Simulation/Splines/R/NIndOneTrajSpline.R")
 set.seed(7777)
 
 # Set values
-NIND <- 5 
-NPOINTS <- 20000
+NIND <- 1
+NPOINTS <- 1000
 ncovs <- 3
 betaind <- rnorm(NIND, sd=2)
 betacov <- rnorm(ncovs, sd=2)

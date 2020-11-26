@@ -1,2 +1,2 @@
 # T-NNGP
-Developing extension to the NNGP methodology in the unidimensional case
+Optimizing the NNGP methodology for the uni-dimensional/temporal setting.

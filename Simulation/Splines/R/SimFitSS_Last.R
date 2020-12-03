@@ -1,4 +1,3 @@
-
 # Packages ----------------------------------------------------------------
 
 require(Rcpp)
@@ -192,7 +191,7 @@ a <- t(chains) %>%
             Q95 = quantile(Value, 0.95),
             Q975 = quantile(Value, 0.975),
             Max = max(Value))
-write.table(a, paste("Simulation/Splines/", algonm, "parstab.txt", sep=""))
+write.table(a, paste(algonm, "parstab.txt", sep=""))
 
 
 # Predictions in Sample ---------------------------------------------------
@@ -218,7 +217,7 @@ rm(quantPreds)
 
 print("Saving In Sample Preds")
 save(predBounds, PredCoverage, MSE_InSamp, rMSE_InSamp, RelMSE_InSamp, PIW_InSamp, 
-     file = paste("Simulation/Splines/", filenm, "predsInLast.RData", sep="_"))
+     file = paste(filenm, "predsInLast.RData", sep="_"))
 
 rm(predBounds)
 # Predictions OOS-------------------------------------------------------------
@@ -259,4 +258,4 @@ rm(outQuantPreds)
 
 print("Saving OOS Preds")
 save(outPredBounds, OutPredCoverage, MSE_OutSamp, rMSE_OutSamp, RelMSE_OutSamp, PIW_OutSamp, 
-     file = paste("Simulation/Splines/", filenm, "predsOutLast.RData", sep="_"))
+     file = paste(filenm, "predsOutLast.RData", sep="_"))

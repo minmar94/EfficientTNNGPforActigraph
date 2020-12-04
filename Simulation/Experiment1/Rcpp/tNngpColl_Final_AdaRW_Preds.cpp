@@ -197,8 +197,10 @@ Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z,
                                const MapVecd muB, const MapMatd vB,
                                const int verbose, string fileName, 
                                const int n_threads) {
-  IOFormat ChainFmt(8, 0, ",", "", "", "\n", "", "");
   
+  //  Comment the following 7 lines if you are running the cmoparison for one sampler iteration, to avoid printing out the files
+  IOFormat ChainFmt(8, 0, ",", "", "", "\n", "", "");
+
   ofstream monitor;
   string mname = fileName+"monitor.txt";
   ofstream chainsFile;
@@ -379,33 +381,35 @@ Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z,
   
   omp_set_num_threads(n_threads);
   
+  //  Comment the following 2 lines if you are running the cmoparison for one sampler iteration, to avoid printing out the files
   monitor.open(mname);
   monitor << "Start looping!" << std::endl;
-  // monitor.close();
+  monitor.close();
   
   // Chain loops
   for(int m = 1; m < M; m++){
+    //  Comment the if statement if you are running the cmoparison for one sampler iteration, to avoid printing out the files
     if (m%verbose==0)
     {
       Rcpp::Rcout << "Iteration" << std::endl << m << std::endl;
-      
+
       // monitor.open(mname.c_str(), std::ios_base::app);
       monitor << "Iteration: " << std::endl << m << std::endl;
       monitor << "Acceptance rate: " << std::endl << accCur/verbose << std::endl;
       // monitor.close();
-      
+
       rwSigmaFile.open(sname.c_str());
       rwSigmaFile << rwSigmam;
       rwSigmaFile.close();
       rwSigmaFile.clear();
-      
+
       string cname = fileName + std::to_string(m/verbose) + "_chains.txt";
       chainsFile.open(cname.c_str());
       MatrixXd curChains(lthetas.rows()+betas.rows(), verbose);
       curChains << lthetas.leftCols(m).rightCols(verbose), betas.leftCols(m).rightCols(verbose);
       chainsFile << curChains.format(ChainFmt) << "\n";
       chainsFile.close();
-      
+
       accCur=0;
     }
     
@@ -558,7 +562,7 @@ Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z,
     if ((m>mBurned))
     {
       loglik(m-mBurned-1) = -n/2*log(2*PI) - q0*0.5 - 0.5*logd0;
-      
+      //  Comment the if statement if you are running the cmoparison for one sampler iteration, to avoid printing out the files
       if ((m%verbose==0)){
         string pname = fileName + std::to_string(m/verbose)+"_preds.txt";
         predsFile.open(pname.c_str());
@@ -617,8 +621,9 @@ Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z,
     betas.col(m) = beta0;
     
   }
+  //  Comment the following lines if you are running the cmoparison for one sampler iteration, to avoid printing out the files
   Rcpp::Rcout << "Iteration" << std::endl << M << std::endl;
-  // Monitoring
+  // // Monitoring
   monitor << "Iteration: " << std::endl << M << std::endl;
   monitor << "Acceptance rate: " << std::endl << accCur/verbose << std::endl;
   
@@ -663,6 +668,7 @@ Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z,
   const double&  q0 = r.dot(r)/tau20 - r.dot(v0)/(tau20*tau20);
   loglik(M-mBurned-1) = -n/2*log(2*PI) - q0*0.5 - 0.5*logd0;
   
+  //  Comment the following 4 lines if you are running the cmoparison for one sampler iteration, to avoid printing out the files
   string pname = fileName+std::to_string(M/verbose)+"_preds.txt";
   predsFile.open(pname.c_str());
   predsFile << wPreds.format(ChainFmt) << "\n";
@@ -671,6 +677,7 @@ Rcpp::List tNngpCollapsed_NAda(const Eigen::Map<ArrayXd> t, const MapVecd Z,
   // Computing covariance parameters from logs
   ArrayXXd thetas = lthetas.array().exp();
   
+  //  Comment the following 2 lines if you are running the cmoparison for one sampler iteration, to avoid printing out the files
   // Monitoring
   monitor << "Finished" << std::endl;
   monitor.close();

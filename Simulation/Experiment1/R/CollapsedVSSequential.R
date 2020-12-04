@@ -1,9 +1,8 @@
 # Packages ----------------------------------------------------------------
-
+require(spNNGP)
 require(Rcpp)
 require(RcppArmadillo)
 require(RcppEigen)
-require(spBayes)
 
 # Rcpp
 sourceCpp("Simulation/Experiment1/Rcpp/tNngpColl_Final_AdaRW_Preds.cpp")
@@ -13,6 +12,9 @@ sourceCpp("Simulation/Experiment1/Rcpp/tNngpColl_Final_AdaRW_Preds.cpp")
 datAll <- read.csv("Simulation/Experiment1/Data/sim_1_1e+05_3_20200723_040942_sim.txt")
 
 ncov <- 1
+
+# Neighbors
+neigh <- 10
 
 # Priors
 alphaS <- 2
@@ -39,35 +41,42 @@ burnInP <- 0
 burnIn <- M*burnInP+1
 verb <- 1
 
-# Wrapper for spLM
-priors1 <- list("beta.flat", "phi.Unif"=c(0.001, 30), "sigma.sq.IG"=c(2,2), "tau.sq.IG"=c(2, 2))
-starting1 <- list("phi"=0.01, "sigma.sq"=3, "tau.sq"=0.1)
-tuning1 <- list("phi"=0.01, "sigma.sq"=0.01, "tau.sq"=0.01)
-Geostat.full<-function(x, y, data, n.samples)
-{
-  sp <- spBayes::spLM(data~1, coords=cbind(x, y), tuning=tuning1, starting=starting1, 
-                      n.samples=n.samples, priors=priors1, cov.model="exponential", verbose = F)
-  return(list(sp))
-}
+# Prior setting
+priors1 <- list("beta.flat",
+                "phi.Unif"=c(0.005, 30), "sigma.sq.IG"=c(alphaS,betaS),
+                "tau.sq.IG"=c(alphaT, betaT))
+starting1 <- list("phi"=1, "sigma.sq"=0.3, "tau.sq"=0.1)
+tuning1 <- list("phi"=0.05, "sigma.sq"=0.05, "tau.sq"=0.05)
 
+# Wrapper for the sequential NNGP
+Geostat.NNSeq <- function(x, y, data, n.samples, nn, method)
+{
+  sp <- spNNGP::spNNGP(data~1, coords=cbind(x, y), method=method, 
+                       family="gaussian", n.neighbors=nn, 
+                       starting=starting1, n.omp.threads = 1,
+                       tuning=tuning1, 
+                       priors=priors1, n.samples=n.samples, 
+                       cov.model="exponential", verbose = F)
+  
+  return(sp)
+}
 
 # Test ------------------------------------------------------------------
 
 # Increasing sample size
-nsimul <- c(100, 1000, 5000, 10000)
-# Number of iterations to estimate the runtime
+ns <- c(2^(0:6)*1000, 100000)
+# Iterations to estimate runtime
 niter <- 100
-# Neighbors
-neigh <- 30
 
-# Output object
+# Output
 timeslistAll <- list()
 
-# Start 
 tsimul <- Sys.time()
-for(i in 1:length(nsimul)){
+for(i in 1:length(ns)){
+  t6 <- matrix(NA, nrow = niter, ncol = 2)
   
-  n <- nsimul[i]
+  n <- ns[i]
+  
   dat <- datAll[1:n, ]
   
   pte <- 0
@@ -79,13 +88,21 @@ for(i in 1:length(nsimul)){
   Xtr <- as.matrix(as.numeric(dat[trIdx, 1]))
   ttr <- dat$t[trIdx]
   
-  times_miter <- matrix(NA, ncol = 2, nrow = niter)
-  
+  Ytr <- rep(0,ntr)
   # Function ----------------------------------------------------------------
   for(k in 1:niter){
-    
-    t8 <- Sys.time()
-    outPut <- tNngpCollapsed_NAda(t=ttr, Z=Ztr, 
+    t0 <- Sys.time()
+    output <- Geostat.NNSeq(x=ttr, y=Ytr, data=Ztr, 
+                            n.samples=M, nn=neigh,
+                            method = "latent")
+    t1 <- Sys.time() - t0
+    # t2 <- Sys.time()
+    # c(fit, betas, sigmas, taus, phis) %<-% Geostat.NNSeq(x=ttr, y=Ytr, data=Ztr, 
+    #                                                      n.samples=M, nn=neigh,
+    #                                                      method = "response")
+    # t3 <- Sys.time() - t2
+    t4 <- Sys.time()
+    output <- tNngpCollapsed_NAda(t=ttr, Z=Ztr, 
                                   X=Xtr, 
                                   indLab=as.character(indstr),
                                   M=M, burnIn=burnInP, neigh=neigh,  
@@ -96,18 +113,10 @@ for(i in 1:length(nsimul)){
                                   muB=muB, vB=vB, 
                                   verbose = verb, fileName = "",
                                   n_threads = 1)
-    t9 <- Sys.time() - t8
-    
-    tinit <- Sys.time()
-    full <- Geostat.full(x=ttr, y=rep(0,ntr), data=Ztr, n.samples=M)
-    tfinalfull <- (Sys.time() - tinit)
-    
-    times_miter[k,] <- c(t9, tfinalfull)
-      
+    t5 <- Sys.time() - t4
+    t6[k,] <- c(t1, t5)
   }
-  print("NSiMUL FINISHED")
-  print(nsimul[i])
-  timeslistAll[[i]] <- times_miter
+  timeslistAll[[i]] <- t6
 }
-tsimulfinal <- Sys.time() - tsimul
-save.image(file = "Simulation/Experiment1/WS/CollapsedVSFullComparison.RData")
+tfinalsimulcollseq <- Sys.time() - tsimul
+

@@ -4,7 +4,7 @@ Application to health study conducted by the Fielding School of Public Health of
 
 ## Experiment 1
 
-  - Data
+  - <b>Data</b>: contains a simulated dataset for one individual with $10^5$ data points and 3 covariates. True parameters used for the simulation are in "\_pars.RData"
   - R
   - Rcpp
   - WS

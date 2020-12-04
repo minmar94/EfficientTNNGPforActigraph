@@ -17,7 +17,17 @@ Application to health study conducted by the Fielding School of Public Health of
     - "MVGen.cpp" auxiliary functions for simulation of a temporal Gaussian process
     - "tNngpColl_Final_AdaRW_Preds.cpp" main functions for estimation and prediction of the Collapsed NNGP 
   - <b>WS</b>: Workspace folder to store the results
-  
+
+### Experiment 2
+
+  - <b>Data</b>: contains a simulated dataset for 5 individual with 20^5 data points and 3 covariates. True parameters used for the simulation are in "\_pars.RData"
+  - <b>R</b>:
+    - "SimulationsFit5Inds.R" fit the Collapsed NNGP pooling all the information together
+    - "SimulationsFit5IndsK.R" fit the Collapsed NNGP for the K-th individual (change the value of K in the script at your convenicence)
+  - <b>Rcpp</b>:
+    - "tNngpColl_Final_AdaRW_Preds.cpp" main functions for estimation and prediction of the Collapsed NNGP 
+  - <b>WS</b>: Workspace folder to store the results
+
  ### Splines
 
   - <b>Data</b>: contains a simulated dataset for 5 individuals with 2\cdot 10^5 data points and 3 covariates, with a spline effect on the mean. 

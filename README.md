@@ -10,7 +10,7 @@ Application to health study conducted by the Fielding School of Public Health of
     - "NIndOneTraj.R" function to simulate a temporal Gaussian process for N individuals
     - "SimulateData.R" simulate the dataset 
     - "CollapsedVSFull.R" comparison between Collapsed NNGP and Full GP for one sampler iteration as the sample size increases
-    - "CollapsedVSSequential.R" \rightarrow comparison between Collapsed NNGP and Sequential NNGP for one sampler iteration as the sample size increases
+    - "CollapsedVSSequential.R" comparison between Collapsed NNGP and Sequential NNGP for one sampler iteration as the sample size increases
     - "FitTNNGPCollapsed.R" fit the Collapsed NNGP on the simulated dataset
     - "FitTNNGPSequential.R" fit the Sequential NNGP on the simulated dataset
   - <b>Rcpp</b>:

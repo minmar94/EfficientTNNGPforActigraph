@@ -4,8 +4,8 @@ Application to health study conducted by the Fielding School of Public Health of
 
 ## Experiment 1
 
-    - Data
-    - R
-    - Rcpp
-    - WS
+  - Data
+  - R
+  - Rcpp
+  - WS
     

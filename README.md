@@ -5,7 +5,7 @@ Application to health study conducted by the Fielding School of Public Health of
 ## Simulation
 ### Experiment 1
 
-  - <b>Data</b>: contains a simulated dataset for one individual with 10^5 data points and 3 covariates. True parameters used for the simulation are in "\_pars.RData"
+  - <b>Data</b>: contains a simulated dataset for one individual with $10^5$ data points and 3 covariates. True parameters used for the simulation are in "\_pars.RData"
   - <b>R</b>:
     - "NIndOneTraj.R" function to simulate a temporal Gaussian process for N individuals
     - "SimulateData.R" simulate the dataset 
@@ -20,7 +20,7 @@ Application to health study conducted by the Fielding School of Public Health of
 
 ### Experiment 2
 
-  - <b>Data</b>: contains a simulated dataset for 5 individual with 20^5 data points and 3 covariates. True parameters used for the simulation are in "\_pars.RData"
+  - <b>Data</b>: contains a simulated dataset for 5 individual with $20^5$ data points and 3 covariates. True parameters used for the simulation are in "\_pars.RData"
   - <b>R</b>:
     - "SimulationsFit5Inds.R" fit the Collapsed NNGP pooling all the information together
     - "SimulationsFit5IndsK.R" fit the Collapsed NNGP for the K-th individual (change the value of K in the script at your convenicence)
@@ -30,7 +30,7 @@ Application to health study conducted by the Fielding School of Public Health of
 
  ### Splines
 
-  - <b>Data</b>: contains a simulated dataset for 5 individuals with 2\cdot 10^5 data points and 3 covariates, with a spline effect on the mean. 
+  - <b>Data</b>: contains a simulated dataset for 5 individuals with $2\cdot 10^5$ data points and 3 covariates, with a spline effect on the mean. 
   True parameters used for the simulation are in "\_pars.RData"
   - <b>R</b>:
     - "NIndOneTrajSpline.R" function to simulate a temporal Gaussian process for N individuals with a spline effect on the mean

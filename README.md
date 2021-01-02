@@ -30,7 +30,7 @@ Application to health study conducted by the Fielding School of Public Health of
 
  ### Splines
 
-  - <b>Data</b>: contains a simulated dataset for 5 individuals with ![formula](https://render.githubusercontent.com/render/math?math=2{\cdot 10^5}) data points and 3 covariates, with a spline effect on the mean. 
+  - <b>Data</b>: contains a simulated dataset for 5 individuals with 2 x ![formula](https://render.githubusercontent.com/render/math?math=10^5) data points and 3 covariates, with a spline effect on the mean. 
   True parameters used for the simulation are in "\_pars.RData"
   - <b>R</b>:
     - "NIndOneTrajSpline.R" function to simulate a temporal Gaussian process for N individuals with a spline effect on the mean
